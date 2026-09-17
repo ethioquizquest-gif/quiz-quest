@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container { max-width: 900px; margin: 0 auto; }
+        .user-card {
+            background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+        }
+        .btn-approve { background: #28a745; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .btn-reject { background: #dc3545; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .btn-pair { background: #ffc107; color: #333; border: none; padding: 12px 30px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-pair:hover { background: #e0a800; }
+        .btn-reset { background: #dc3545; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-reset:hover { background: #c82333; }
+        .btn-tournament { background: #fd7e14; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-tournament:hover { background: #e8690b; }
+        .btn-timeout { background: #6f42c1; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-timeout:hover { background: #5a32a3; }
+        img.thumbnail { max-width: 80px; max-height: 80px; border-radius: 5px; margin-top: 5px; }
+        .section-title { margin-top: 30px; padding-bottom: 10px; border-bottom: 2px solid #ddd; }
+        .badge-success { background: #28a745; color: white; padding: 2px 12px; border-radius: 20px; font-size: 14px; }
+        .badge-warning { background: #ffc107; color: #333; padding: 2px 12px; border-radius: 20px; font-size: 14px; }
+        .badge-info { background: #17a2b8; color: white; padding: 2px 12px; border-radius: 20px; font-size: 14px; }
+        .stats-box { background: #e9ecef; padding: 15px; border-radius: 8px; margin: 10px 0; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; }
+        .stat-item { text-align: center; }
+        .stat-number { font-size: 28px; font-weight: bold; color: #4a90e2; }
+        .stat-label { font-size: 14px; color: #555; }
+        .pair-message { margin-top: 10px; padding: 10px; border-radius: 5px; text-align: center; }
+        .pair-success { background: #d4edda; color: #155724; }
+        .pair-error { background: #f8d7da; color: #721c24; }
+        .pair-info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container admin-container">
+        <h1>🛠️ Admin Panel</h1>
+
+        <div class="stats-box">
+            <div class="stat-item">
+                <div class="stat-number" id="totalParticipants">0</div>
+                <div class="stat-label">Total Participants</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="pendingCount">0</div>
+                <div class="stat-label">Pending Screenshots</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="pairedCount">0</div>
+                <div class="stat-label">Pairs Created</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="unresolvedCount">0</div>
+                <div class="stat-label">Unresolved Pairs</div>
+            </div>
+        </div>
+
+        <a href="admin-tournament.html" style="text-decoration: none;">
+            <button class="btn-tournament">🏆 Tournament Control (Start Rounds)</button>
+        </a>
+
+        <h3 class="section-title">⚔️ Start the Quest</h3>
+        <p style="color: #555; font-size: 14px;">Pair all approved participants into 1v1 battles. Maximum 80 participants.</p>
+        
+        <button class="btn-pair" id="pairBtn" onclick="pairUsers()">🤝 Pair Users (Round 1 Quick Start)</button>
+        <button class="btn-reset" onclick="resetPairs()">🔄 Reset All Pairs</button>
+        
+        <h3 class="section-title">⏰ Auto-Kick Inactive Users</h3>
+        <p style="color: #555; font-size: 14px;">
+            Resolve pairs where users haven't finished within <strong>5 minutes</strong>. 
+            Tiebreaker: earliest registration wins.
+        </p>
+        <button class="btn-timeout" id="timeoutBtn" onclick="checkTimeouts()">
+            ⏰ Check Timeouts (5 min)
+        </button>
+        <div id="pairMessage" class="pair-message" style="display: none;"></div>
+
+        <h3 class="section-title">📸 Pending Screenshots</h3>
+        <div id="pendingList">Loading...</div>
+
+        <h3 class="section-title">👥 Quest Participants</h3>
+        <div id="participantList">Loading...</div>
+
+        <h3 class="section-title">⚔️ Active Pairs</h3>
+        <div id="pairsList">Loading...</div>
+
+        <p class="link"><a href="dashboard.html">← Back to Dashboard</a></p>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        async function loadAllData() {
+            await loadPending();
+            await loadParticipants();
+            await loadPairs();
+            await loadStats();
+        }
+
+        async function loadPending() {
+            try {
+                const res = await fetch('http://localhost:3000/api/admin/pending', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 403) { document.getElementById('pendingList').innerHTML = '❌ Admin access only.'; return; }
+                const data = await res.json();
+                const list = document.getElementById('pendingList');
+                if (!Array.isArray(data) || data.length === 0) { list.innerHTML = '✅ No pending screenshots.'; return; }
+                list.innerHTML = data.map(user => `
+                    <div class="user-card">
+                        <div><strong>${user.email}</strong> (ID: ${user.user_id})<br><img src="/uploads/${user.filename}" class="thumbnail"></div>
+                        <div>
+                            <button class="btn-approve" onclick="approve(${user.id}, 'approve')">✅ Approve</button>
+                            <button class="btn-reject" onclick="approve(${user.id}, 'reject')">❌ Reject</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) { document.getElementById('pendingList').innerHTML = 'Error loading.'; }
+        }
+
+        async function approve(id, action) {
+            try {
+                const res = await fetch('http://localhost:3000/api/admin/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ screenshotId: id, action })
+                });
+                const data = await res.json();
+                alert(data.message);
+                loadAllData();
+            } catch (error) { alert('Error: ' + error.message); }
+        }
+
+        async function loadParticipants() {
+            try {
+                const res = await fetch('http://localhost:3000/api/admin/participants', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 403) { document.getElementById('participantList').innerHTML = '❌ Admin only.'; return; }
+                const data = await res.json();
+                const list = document.getElementById('participantList');
+                if (!Array.isArray(data) || data.length === 0) { list.innerHTML = 'No users joined yet.'; return; }
+                list.innerHTML = data.map((user, i) => `
+                    <div class="user-card">
+                        <span><strong>#${i + 1}</strong> ${user.email}</span>
+                        <span class="badge-info">Registered: ${new Date(user.created_at).toLocaleDateString()}</span>
+                    </div>
+                `).join('');
+            } catch (error) { document.getElementById('participantList').innerHTML = 'Error loading.'; }
+        }
+
+        async function loadPairs() {
+            try {
+                const res = await fetch('http://localhost:3000/api/admin/pairs', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 403) { document.getElementById('pairsList').innerHTML = '❌ Admin only.'; return; }
+                const data = await res.json();
+                const list = document.getElementById('pairsList');
+                if (!Array.isArray(data) || data.length === 0) { list.innerHTML = 'No pairs yet.'; return; }
+                
+                list.innerHTML = data.map((pair, i) => `
+                    <div class="user-card">
+                        <span><strong>Pair #${i + 1}</strong> (Round ${pair.round})</span>
+                        <span>${pair.player1_email} vs ${pair.player2_email}</span>
+                        <span class="${pair.winner_id ? 'badge-success' : 'badge-warning'}">
+                            ${pair.winner_id ? '✅ ' + pair.winner_email : '⏳ In Progress'}
+                        </span>
+                    </div>
+                `).join('');
+            } catch (error) { document.getElementById('pairsList').innerHTML = 'Error loading.'; }
+        }
+
+        async function loadStats() {
+            try {
+                const pRes = await fetch('http://localhost:3000/api/admin/participants', { headers: { 'Authorization': `Bearer ${token}` } });
+                const pData = await pRes.json();
+                document.getElementById('totalParticipants').textContent = Array.isArray(pData) ? pData.length : 0;
+
+                const sRes = await fetch('http://localhost:3000/api/admin/pending', { headers: { 'Authorization': `Bearer ${token}` } });
+                const sData = await sRes.json();
+                document.getElementById('pendingCount').textContent = Array.isArray(sData) ? sData.length : 0;
+
+                const pairRes = await fetch('http://localhost:3000/api/admin/pairs', { headers: { 'Authorization': `Bearer ${token}` } });
+                const pairData = await pairRes.json();
+                document.getElementById('pairedCount').textContent = Array.isArray(pairData) ? pairData.length : 0;
+
+                if (Array.isArray(pairData)) {
+                    const unresolved = pairData.filter(p => !p.winner_id).length;
+                    document.getElementById('unresolvedCount').textContent = unresolved;
+                } else {
+                    document.getElementById('unresolvedCount').textContent = '0';
+                }
+            } catch (error) { console.error('Stats error:', error); }
+        }
+
+        async function pairUsers() {
+            const btn = document.getElementById('pairBtn');
+            const msg = document.getElementById('pairMessage');
+            btn.disabled = true;
+            btn.textContent = '⏳ Pairing...';
+            msg.style.display = 'block';
+
+            try {
+                const res = await fetch('http://localhost:3000/api/pair-users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    msg.className = 'pair-message pair-success';
+                    msg.innerHTML = `✅ ${data.message}`;
+                } else {
+                    msg.className = 'pair-message pair-error';
+                    msg.innerHTML = `❌ ${data.error}`;
+                }
+                loadAllData();
+            } catch (error) {
+                msg.className = 'pair-message pair-error';
+                msg.innerHTML = '❌ Server error.';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🤝 Pair Users (Round 1 Quick Start)';
+            }
+        }
+
+        async function resetPairs() {
+            if (!confirm('⚠️ This will delete ALL pairs and answers. Are you sure?')) return;
+            const msg = document.getElementById('pairMessage');
+            msg.style.display = 'block';
+            msg.className = 'pair-message';
+            msg.innerHTML = '⏳ Resetting...';
+
+            try {
+                const res = await fetch('http://localhost:3000/api/admin/reset-pairs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                msg.className = 'pair-message pair-success';
+                msg.innerHTML = `✅ ${data.message}`;
+                loadAllData();
+            } catch (error) {
+                msg.className = 'pair-message pair-error';
+                msg.innerHTML = '❌ Server error.';
+            }
+        }
+
+        async function checkTimeouts() {
+            if (!confirm('⏰ Check for inactive users?\n\nThis will auto-resolve any pairs older than 5 minutes.\nTiebreaker: earliest registration wins.')) return;
+            
+            const btn = document.getElementById('timeoutBtn');
+            const msg = document.getElementById('pairMessage');
+            btn.disabled = true;
+            btn.textContent = '⏳ Checking...';
+            msg.style.display = 'block';
+            msg.className = 'pair-message pair-info';
+            msg.innerHTML = '⏳ Checking all active pairs...';
+
+            try {
+                const res = await fetch('http://localhost:3000/api/admin/check-timeouts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    msg.className = 'pair-message pair-success';
+                    msg.innerHTML = `✅ ${data.message}`;
+                    
+                    if (data.resolved && data.resolved.length > 0) {
+                        let details = '\n\nResolved pairs:\n';
+                        data.resolved.forEach(r => {
+                            details += `\n• Pair #${r.pairId}: ${r.reason}`;
+                        });
+                        alert(data.message + details);
+                    }
+                } else {
+                    msg.className = 'pair-message pair-error';
+                    msg.innerHTML = `❌ ${data.error}`;
+                }
+                loadAllData();
+            } catch (error) {
+                msg.className = 'pair-message pair-error';
+                msg.innerHTML = '❌ Server error.';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '⏰ Check Timeouts (5 min)';
+            }
+        }
+
+        loadAllData();
+        setInterval(loadAllData, 30000);
+    </script>
+</body>
+</html>

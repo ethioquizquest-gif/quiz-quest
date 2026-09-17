@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Winners</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .winner-card {
+            background: #d4edda;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .pair-card {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4a90e2;
+        }
+        .badge {
+            background: #28a745;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👑 All Winners</h1>
+        <div id="winnersList">Loading...</div>
+        <p class="link"><a href="admin-panel.html">← Back to Admin Panel</a></p>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        async function loadWinners() {
+            try {
+                const res = await fetch('http://localhost:3000/api/admin/pairs', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.status === 403) {
+                    document.getElementById('winnersList').innerHTML = '❌ Admin access only.';
+                    return;
+                }
+
+                const data = await res.json();
+                const list = document.getElementById('winnersList');
+
+                if (data.length === 0) {
+                    list.innerHTML = 'No pairs found.';
+                    return;
+                }
+
+                // Count winners
+                const winnerCounts = {};
+                data.forEach(pair => {
+                    if (pair.winner_id && pair.winner_email) {
+                        winnerCounts[pair.winner_email] = (winnerCounts[pair.winner_email] || 0) + 1;
+                    }
+                });
+
+                // Sort winners by count
+                const sortedWinners = Object.entries(winnerCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5);
+
+                let html = '<h3>🏆 Top 5 Winners</h3>';
+                if (sortedWinners.length === 0) {
+                    html += '<p>No winners yet. Complete some quizzes!</p>';
+                } else {
+                    html += sortedWinners.map(([email, count], index) => `
+                        <div class="winner-card">
+                            <span><strong>#${index + 1}</strong> ${email}</span>
+                            <span class="badge">${count} win${count > 1 ? 's' : ''}</span>
+                        </div>
+                    `).join('');
+                }
+
+                // Show all pairs
+                html += '<h3 style="margin-top: 30px;">📊 All Pairs</h3>';
+                html += data.map(pair => `
+                    <div class="pair-card">
+                        <div><strong>${pair.player1_email}</strong> vs <strong>${pair.player2_email}</strong></div>
+                        <div>
+                            ${pair.winner_id ? '🏆 Winner: ' + pair.winner_email : '⏳ In Progress or No Winner'}
+                        </div>
+                    </div>
+                `).join('');
+
+                list.innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('winnersList').innerHTML = 'Error loading winners.';
+                console.error('Winners error:', error);
+            }
+        }
+
+        loadWinners();
+    </script>
+</body>
+</html>

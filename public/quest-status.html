@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quest Status</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Quest Status</h1>
+        <div id="statusBox" style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <p><strong>Total Joined:</strong> <span id="totalJoined">Loading...</span> / 80</p>
+            <p><strong>Spots Left:</strong> <span id="spotsLeft">Loading...</span></p>
+            <p><strong>Your Status:</strong> <span id="userStatus">Checking...</span></p>
+        </div>
+        <div id="actionArea" style="margin-top: 20px;"></div>
+        <p class="link"><a href="dashboard.html">← Back to Dashboard</a></p>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        async function loadStatus() {
+            try {
+                const res = await fetch('http://localhost:3000/api/quest-status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to fetch status');
+                }
+
+                const data = await res.json();
+
+                document.getElementById('totalJoined').textContent = data.totalJoined;
+                document.getElementById('spotsLeft').textContent = data.spotsLeft;
+
+                const userStatus = document.getElementById('userStatus');
+                const actionArea = document.getElementById('actionArea');
+
+                if (data.userJoined) {
+                    userStatus.innerHTML = '✅ You have joined the quest!';
+                    userStatus.style.color = 'green';
+                    actionArea.innerHTML = `<p style="text-align:center; color: green;">🎉 You're in! Wait for the admin to pair you.</p>`;
+                } else if (data.isFull) {
+                    userStatus.innerHTML = '❌ Quest is full! (80/80)';
+                    userStatus.style.color = 'red';
+                    actionArea.innerHTML = `<p style="text-align:center; color: red;">😞 Sorry, all 80 spots are taken.</p>`;
+                } else {
+                    userStatus.innerHTML = '⏳ You haven\'t joined yet.';
+                    userStatus.style.color = 'orange';
+                    actionArea.innerHTML = `
+                        <button onclick="joinQuest()" style="width:100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+                            ⚔️ Join Quest (${data.spotsLeft} spots left)
+                        </button>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('totalJoined').textContent = 'Error';
+                document.getElementById('spotsLeft').textContent = 'Error';
+                document.getElementById('userStatus').textContent = '⚠️ Could not load status';
+                document.getElementById('userStatus').style.color = 'red';
+            }
+        }
+
+        async function joinQuest() {
+            try {
+                const res = await fetch('http://localhost:3000/api/join-quest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('✅ ' + data.message);
+                    loadStatus(); // Refresh
+                } else {
+                    alert('❌ ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Server error. Is the backend running?');
+            }
+        }
+
+        loadStatus();
+    </script>
+</body>
+</html>

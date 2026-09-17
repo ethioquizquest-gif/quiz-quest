@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Lobby</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ Quiz Lobby</h1>
+        <div id="statusBox" style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <p><strong>Your Status:</strong> <span id="userStatus">Checking...</span></p>
+        </div>
+        <div id="actionArea" style="margin-top: 20px;"></div>
+        <p class="link"><a href="dashboard.html">← Back to Dashboard</a></p>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!token) window.location.href = 'login.html';
+
+        let pairId = null;
+        let currentRound = 1;
+
+        async function checkStatus() {
+            try {
+                // 1. Check if user joined quest
+                const questRes = await fetch('http://localhost:3000/api/quest-status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const questData = await questRes.json();
+
+                const statusSpan = document.getElementById('userStatus');
+                const actionArea = document.getElementById('actionArea');
+
+                if (!questData.userJoined) {
+                    statusSpan.innerHTML = '❌ You haven\'t joined the quest yet.';
+                    statusSpan.style.color = 'red';
+                    actionArea.innerHTML = `
+                        <a href="join-quest.html">
+                            <button style="width:100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+                                ⚔️ Join Quest First
+                            </button>
+                        </a>
+                    `;
+                    return;
+                }
+
+                // 2. Check if user has an active pair
+                const pairRes = await fetch('http://localhost:3000/api/my-pair', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const pairData = await pairRes.json();
+
+                if (pairData.pairId) {
+                    pairId = pairData.pairId;
+                    currentRound = pairData.round || 1;
+                    
+                    statusSpan.innerHTML = `✅ You are paired! (Round ${currentRound})`;
+                    statusSpan.style.color = 'green';
+                    actionArea.innerHTML = `
+                        <a href="quiz.html?pairId=${pairData.pairId}&round=${currentRound}">
+                            <button style="width:100%; padding: 15px; background: #dc3545; color: white; border: none; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer;">
+                                ⚔️ Start Quiz Battle (Round ${currentRound})
+                            </button>
+                        </a>
+                    `;
+                    return;
+                }
+
+                // 3. No active pair — check if eliminated
+                const eliminatedRes = await fetch('http://localhost:3000/api/am-i-eliminated', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const eliminatedData = await eliminatedRes.json();
+
+                if (eliminatedData.eliminated) {
+                    statusSpan.innerHTML = '❌ You have been eliminated';
+                    statusSpan.style.color = 'red';
+                    actionArea.innerHTML = `
+                        <div style="background: #f8d7da; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #dc3545;">
+                            <h3 style="color: #721c24; margin-bottom: 10px;">😞 Eliminated</h3>
+                            <p style="color: #721c24;">${eliminatedData.reason || 'You did not advance to the next round.'}</p>
+                        </div>
+                        <a href="prizes.html">
+                            <button style="width:100%; margin-top: 15px; padding: 12px; background: #ffd700; color: #333; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
+                                🏆 View Prize Winners
+                            </button>
+                        </a>
+                    `;
+                    return;
+                }
+
+                // 4. Waiting for admin to pair
+                statusSpan.innerHTML = '⏳ Waiting for admin to pair you...';
+                statusSpan.style.color = 'orange';
+                actionArea.innerHTML = `
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; text-align: center;">
+                        <p style="color: #856404;">The admin will pair you with an opponent soon.</p>
+                        <p style="color: #856404; font-size: 13px;">Refresh this page in a few minutes.</p>
+                    </div>
+                `;
+
+            } catch (error) {
+                document.getElementById('userStatus').innerHTML = 'Error checking status.';
+                console.error('Status check error:', error);
+            }
+        }
+
+        checkStatus();
+        setInterval(checkStatus, 5000);
+    </script>
+</body>
+</html>

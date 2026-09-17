@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quiz Quest - Ultimate Challenge</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .hero { text-align: center; padding: 30px 20px; }
+        .hero h1 { font-size: 36px; margin-bottom: 15px; color: #1a1a2e; }
+        .hero .tagline { font-size: 18px; color: #555; margin-bottom: 30px; line-height: 1.6; }
+        .features { display: flex; flex-direction: column; gap: 15px; margin: 30px 0; text-align: left; }
+        .feature { background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #4a90e2; }
+        .feature strong { display: block; margin-bottom: 5px; color: #1a1a2e; }
+        .feature small { color: #666; }
+        .social-links { display: flex; justify-content: center; gap: 15px; margin: 30px 0; flex-wrap: wrap; }
+        .social-links a {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 55px; height: 55px; color: white; border-radius: 50%;
+            text-decoration: none; font-size: 24px; font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .social-links a:hover { transform: scale(1.1); }
+        .social-links a.youtube { background: #ff0000; }
+        .social-links a.youtube:hover { background: #cc0000; }
+        .social-links a.telegram { background: #0088cc; }
+        .social-links a.telegram:hover { background: #006699; }
+        .social-links a.instagram { background: #e4405f; }
+        .social-links a.instagram:hover { background: #c13584; }
+        .social-links a.tiktok { background: #000000; }
+        .social-links a.tiktok:hover { background: #333333; }
+        .cta-button {
+            display: inline-block; padding: 18px 60px; font-size: 20px; font-weight: bold;
+            background: #28a745; color: white; border: none; border-radius: 12px;
+            cursor: pointer; text-decoration: none; margin: 20px 0;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .cta-button:hover { background: #218838; transform: translateY(-2px); }
+        .prize-link {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #ffd700;
+            color: #333;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: transform 0.2s;
+        }
+        .prize-link:hover { transform: scale(1.05); }
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 26px; }
+            .hero .tagline { font-size: 16px; }
+            .cta-button { padding: 16px 40px; font-size: 18px; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 700px;">
+        <div class="hero">
+            <h1>🏆 Quiz Quest</h1>
+            <p class="tagline">
+                Test your knowledge, compete with others, and win amazing prizes!<br>
+                Join the ultimate 1v1 quiz tournament.
+            </p>
+
+            <div class="features">
+                <div class="feature">
+                    <strong>⚔️ 1v1 Battles</strong>
+                    <small>Face off against other players in real-time quiz battles</small>
+                </div>
+                <div class="feature">
+                    <strong>⏱️ 6-Second Timer</strong>
+                    <small>Answer fast! Each question gives you only 6 seconds</small>
+                </div>
+                <div class="feature">
+                    <strong>🏅 Multi-Round Tournament</strong>
+                    <small>Win and advance through 4 rounds to reach the final 5</small>
+                </div>
+                <div class="feature">
+                    <strong>🎁 Real Prizes</strong>
+                    <small>Top 5 winners receive prizes from our sponsors</small>
+                </div>
+            </div>
+
+            <a href="register.html">
+                <button class="cta-button">🚀 Get Started</button>
+            </a>
+
+            <p style="margin-top: 15px; color: #888; font-size: 14px;">
+                Already have an account? <a href="login.html" style="color: #4a90e2;">Login here</a>
+            </p>
+
+            <div style="margin-top: 25px;">
+                <a href="prizes.html" class="prize-link">🏆 See Prize Winners →</a>
+            </div>
+
+            <h3 style="margin-top: 35px; color: #1a1a2e;">📱 Follow Us</h3>
+            <div class="social-links">
+                <a href="https://www.youtube.com/@ethioquizquest" target="_blank" class="youtube" title="YouTube">▶</a>
+                <a href="https://t.me/ethioquizquest" target="_blank" class="telegram" title="Telegram">✈</a>
+                <a href="https://www.instagram.com/ethioquizquest" target="_blank" class="instagram" title="Instagram">📷</a>
+                <a href="https://www.tiktok.com/@ethioquizquest" target="_blank" class="tiktok" title="TikTok">♪</a>
+            </div>
+
+            <p style="color: #666; font-size: 13px; margin-top: 20px;">
+                📸 <strong>To join:</strong> Subscribe to our YouTube channel and upload a screenshot of your subscription.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

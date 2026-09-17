@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Screenshot</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📸 Join the Quest</h1>
+        <p style="text-align: center; color: #555;">Submit your YouTube subscription screenshot</p>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="screenshot">Select Screenshot</label>
+                <input type="file" id="screenshot" accept="image/*" required>
+            </div>
+            <button type="submit">Submit for Approval</button>
+            <div id="message"></div>
+        </form>
+        <div id="statusBox" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <p><strong>Your Status:</strong> <span id="userStatus">Checking...</span></p>
+        </div>
+        <p class="link"><a href="dashboard.html">← Back to Dashboard</a></p>
+    </div>
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+        async function checkStatus() {
+            try {
+                const res = await fetch('http://localhost:3000/api/screenshot-status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const statusSpan = document.getElementById('userStatus');
+                if (data.status === 'approved') {
+                    statusSpan.innerHTML = '✅ Approved! You can join the quest.';
+                    statusSpan.style.color = 'green';
+                } else if (data.status === 'pending') {
+                    statusSpan.innerHTML = '⏳ Pending admin approval...';
+                    statusSpan.style.color = 'orange';
+                } else if (data.status === 'rejected') {
+                    statusSpan.innerHTML = '❌ Rejected. Please upload a valid screenshot.';
+                    statusSpan.style.color = 'red';
+                } else {
+                    statusSpan.innerHTML = 'No screenshot uploaded yet.';
+                    statusSpan.style.color = 'gray';
+                }
+            } catch (error) {
+                document.getElementById('userStatus').innerHTML = 'Error checking status';
+            }
+        }
+        checkStatus();
+        const form = document.getElementById('uploadForm');
+        const messageDiv = document.getElementById('message');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('screenshot');
+            const file = fileInput.files[0];
+            if (!file) {
+                messageDiv.innerHTML = '❌ Please select a file.';
+                messageDiv.className = 'error';
+                return;
+            }
+            const formData = new FormData();
+            formData.append('screenshot', file);
+            try {
+                const res = await fetch('http://localhost:3000/api/upload-screenshot', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    messageDiv.innerHTML = '✅ ' + data.message;
+                    messageDiv.className = 'success';
+                    checkStatus();
+                } else {
+                    messageDiv.innerHTML = '❌ ' + data.error;
+                    messageDiv.className = 'error';
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '❌ Server error.';
+                messageDiv.className = 'error';
+            }
+        });
+    </script>
+</body>
+</html>

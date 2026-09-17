@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Quest</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ Join the Quest</h1>
+        
+        <div id="statusBox" style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <p><strong>Total Joined:</strong> <span id="totalJoined">Loading...</span> / 80</p>
+            <p><strong>Spots Left:</strong> <span id="spotsLeft">Loading...</span></p>
+            <p><strong>Your Status:</strong> <span id="userStatus">Checking...</span></p>
+            <p><strong>Screenshot Status:</strong> <span id="screenshotStatus">Checking...</span></p>
+        </div>
+
+        <div id="actionArea" style="margin-top: 20px;"></div>
+
+        <p class="link"><a href="dashboard.html">← Back to Dashboard</a></p>
+    </div>
+
+    <script>
+        // ============ CHECK LOGIN ============
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!token || !user) {
+            window.location.href = 'login.html';
+        }
+
+        // ============ PREVENT ADMIN FROM JOINING ============
+        const isAdmin = user.id === 1;
+
+        // ============ LOAD STATUS ============
+        async function loadStatus() {
+            try {
+                // Get quest status
+                const questRes = await fetch('http://localhost:3000/api/quest-status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const questData = await questRes.json();
+
+                // Get screenshot status
+                const screenshotRes = await fetch('http://localhost:3000/api/screenshot-status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const screenshotData = await screenshotRes.json();
+
+                // Update UI
+                document.getElementById('totalJoined').textContent = questData.totalJoined;
+                document.getElementById('spotsLeft').textContent = questData.spotsLeft;
+
+                const userStatus = document.getElementById('userStatus');
+                const screenshotStatus = document.getElementById('screenshotStatus');
+                const actionArea = document.getElementById('actionArea');
+
+                // ============ ADMIN CHECK ============
+                if (isAdmin) {
+                    userStatus.innerHTML = '👑 Admin Account';
+                    userStatus.style.color = '#6c757d';
+                    screenshotStatus.innerHTML = 'N/A';
+                    screenshotStatus.style.color = '#6c757d';
+                    actionArea.innerHTML = `
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffc107;">
+                            <p style="color: #856404; margin: 0; text-align: center;">
+                                ⚠️ Admin accounts cannot join the quest.<br>
+                                <small>Only regular users can participate.</small>
+                            </p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // ============ SCREENSHOT STATUS ============
+                const screenshotStatusText = screenshotData.status || 'none';
+                let screenshotMessage = '';
+                let screenshotColor = '';
+
+                switch (screenshotStatusText) {
+                    case 'approved':
+                        screenshotMessage = '✅ Approved! You can join.';
+                        screenshotColor = 'green';
+                        break;
+                    case 'pending':
+                        screenshotMessage = '⏳ Pending admin approval...';
+                        screenshotColor = 'orange';
+                        break;
+                    case 'rejected':
+                        screenshotMessage = '❌ Rejected. Please upload a valid screenshot.';
+                        screenshotColor = 'red';
+                        break;
+                    default:
+                        screenshotMessage = '📸 No screenshot uploaded yet.';
+                        screenshotColor = 'gray';
+                }
+                screenshotStatus.innerHTML = screenshotMessage;
+                screenshotStatus.style.color = screenshotColor;
+
+                // ============ USER JOIN STATUS ============
+                if (questData.userJoined) {
+                    userStatus.innerHTML = '✅ You have joined the quest!';
+                    userStatus.style.color = 'green';
+                    actionArea.innerHTML = `
+                        <div style="background: #d4edda; padding: 15px; border-radius: 8px; border: 1px solid #28a745;">
+                            <p style="color: #155724; margin: 0; text-align: center;">
+                                🎉 You're in! Wait for the admin to pair you.
+                            </p>
+                        </div>
+                        <a href="quiz-lobby.html">
+                            <button style="width:100%; margin-top: 10px; padding: 12px; background: #17a2b8; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+                                📊 Go to Quiz Lobby
+                            </button>
+                        </a>
+                    `;
+                    return;
+                }
+
+                if (questData.isFull) {
+                    userStatus.innerHTML = '❌ Quest is full! (80/80)';
+                    userStatus.style.color = 'red';
+                    actionArea.innerHTML = `
+                        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; border: 1px solid #dc3545;">
+                            <p style="color: #721c24; margin: 0; text-align: center;">
+                                😞 Sorry, all 80 spots are taken. Try again next time!
+                            </p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // ============ NOT JOINED YET ============
+                userStatus.innerHTML = '⏳ You haven\'t joined yet.';
+                userStatus.style.color = 'orange';
+
+                // Check if screenshot is approved before showing join button
+                if (screenshotStatusText !== 'approved') {
+                    actionArea.innerHTML = `
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffc107;">
+                            <p style="color: #856404; margin: 0; text-align: center;">
+                                ⚠️ You need to be approved before joining.<br>
+                                <small>Go to Dashboard → Submit Screenshot</small>
+                            </p>
+                        </div>
+                        <a href="upload-screenshot.html">
+                            <button style="width:100%; margin-top: 10px; padding: 12px; background: #4a90e2; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+                                📸 Upload Screenshot
+                            </button>
+                        </a>
+                    `;
+                    return;
+                }
+
+                // ============ SHOW JOIN BUTTON ============
+                actionArea.innerHTML = `
+                    <button onclick="joinQuest()" style="width:100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;">
+                        ⚔️ Join Quest (${questData.spotsLeft} spots left)
+                    </button>
+                `;
+
+            } catch (error) {
+                console.error('Status error:', error);
+                document.getElementById('totalJoined').textContent = 'Error';
+                document.getElementById('spotsLeft').textContent = 'Error';
+                document.getElementById('userStatus').textContent = '⚠️ Could not load status';
+                document.getElementById('userStatus').style.color = 'red';
+            }
+        }
+
+        // ============ JOIN QUEST FUNCTION ============
+        async function joinQuest() {
+            const actionArea = document.getElementById('actionArea');
+            const btn = actionArea.querySelector('button');
+            
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Joining...';
+            }
+
+            try {
+                const res = await fetch('http://localhost:3000/api/join-quest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('✅ ' + data.message);
+                    loadStatus(); // Refresh status
+                } else {
+                    alert('❌ ' + data.error);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = '⚔️ Join Quest';
+                    }
+                }
+            } catch (error) {
+                alert('❌ Server error. Is the backend running?');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '⚔️ Join Quest';
+                }
+            }
+        }
+
+        // ============ LOAD ON PAGE LOAD ============
+        loadStatus();
+
+        // Refresh status every 10 seconds
+        setInterval(loadStatus, 10000);
+    </script>
+</body>
+</html>

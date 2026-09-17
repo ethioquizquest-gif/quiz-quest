@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Login</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="you@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit">Login</button>
+            <div id="message"></div>
+            <p class="link">Don't have an account? <a href="register.html">Register here</a></p>
+        </form>
+    </div>
+    <script>
+        const form = document.getElementById('loginForm');
+        const messageDiv = document.getElementById('message');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            try {
+                const response = await fetch('http://localhost:3000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    messageDiv.innerHTML = '✅ ' + data.message;
+                    messageDiv.className = 'success';
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('token', data.token);
+                    setTimeout(() => {
+                        window.location.href = 'upload-screenshot.html';
+                    }, 1500);
+                } else {
+                    messageDiv.innerHTML = '❌ ' + data.error;
+                    messageDiv.className = 'error';
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '❌ Server error. Is the backend running?';
+                messageDiv.className = 'error';
+            }
+        });
+    </script>
+</body>
+</html>

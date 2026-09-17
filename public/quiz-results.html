@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quiz Results</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .result-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .result-card.winner {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+        .result-card.loser {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+        .result-card.tie {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+        .winner-badge {
+            background: #28a745;
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: inline-block;
+        }
+        .vs-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #888;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 Quiz Results</h1>
+        <div id="resultArea">
+            <div id="loading" style="text-align: center;">Loading results...</div>
+        </div>
+        <p class="link"><a href="dashboard.html">← Back to Dashboard</a></p>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const pairId = urlParams.get('pairId');
+
+        if (!pairId) {
+            document.getElementById('loading').innerHTML = '❌ No pair ID provided.';
+        } else {
+            checkCompletionThenLoad();
+        }
+
+        // ============ CHECK IF COMPLETED FIRST ============
+        async function checkCompletionThenLoad() {
+            try {
+                const res = await fetch(`http://localhost:3000/api/quiz-completed/${pairId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (!data.completed) {
+                    alert('⚠️ You must complete the quiz first.');
+                    window.location.href = `quiz.html?pairId=${pairId}`;
+                    return;
+                }
+
+                loadResults(pairId);
+            } catch (error) {
+                console.error('Check error:', error);
+                document.getElementById('loading').innerHTML = '❌ Error loading results.';
+            }
+        }
+
+        // ============ LOAD RESULTS ============
+        async function loadResults(pairId) {
+            try {
+                const res = await fetch(`http://localhost:3000/api/quiz-results/${pairId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    document.getElementById('loading').innerHTML = '❌ ' + error.error;
+                    return;
+                }
+
+                const data = await res.json();
+                displayResults(data);
+
+            } catch (error) {
+                document.getElementById('loading').innerHTML = '❌ Error loading results.';
+                console.error('Results error:', error);
+            }
+        }
+
+        // ============ DISPLAY RESULTS ============
+        function displayResults(data) {
+            const area = document.getElementById('resultArea');
+            area.innerHTML = '';
+
+            const user = JSON.parse(localStorage.getItem('user'));
+            const isPlayer1 = user.id === data.player1.id;
+            const isPlayer2 = user.id === data.player2.id;
+
+            let userWon = false;
+            let userScore = 0;
+            let opponentScore = 0;
+            let opponentName = '';
+
+            if (isPlayer1) {
+                userScore = data.player1.score;
+                opponentScore = data.player2.score;
+                opponentName = data.player2.email;
+                userWon = data.winnerId === user.id;
+            } else if (isPlayer2) {
+                userScore = data.player2.score;
+                opponentScore = data.player1.score;
+                opponentName = data.player1.email;
+                userWon = data.winnerId === user.id;
+            }
+
+            let resultHtml = '';
+
+            if (data.message.includes('tie')) {
+                resultHtml = `
+                    <div class="result-card tie">
+                        <h2>🤝 It's a Tie!</h2>
+                        <p>You both scored <strong>${userScore}</strong> out of 8!</p>
+                    </div>
+                `;
+            } else if (userWon) {
+                resultHtml = `
+                    <div class="result-card winner">
+                        <h2>🎉 You Won!</h2>
+                        <p>You scored <strong>${userScore}</strong> vs ${opponentName}'s <strong>${opponentScore}</strong></p>
+                        <span class="winner-badge">🏆 Winner</span>
+                    </div>
+                `;
+            } else {
+                resultHtml = `
+                    <div class="result-card loser">
+                        <h2>😞 You Lost</h2>
+                        <p>You scored <strong>${userScore}</strong> vs ${opponentName}'s <strong>${opponentScore}</strong></p>
+                        <span style="color: #6c757d;">Better luck next time!</span>
+                    </div>
+                `;
+            }
+
+            const scoreboardHtml = `
+                <div style="margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 8px;">
+                    <h3 style="text-align: center;">📊 Scoreboard</h3>
+                    <div style="display: flex; justify-content: space-around; text-align: center;">
+                        <div>
+                            <strong>${data.player1.email}</strong>
+                            <div class="score">${data.player1.score}</div>
+                            <small>${data.winnerId === data.player1.id ? '🏆 Winner' : ''}</small>
+                        </div>
+                        <div class="vs-text">VS</div>
+                        <div>
+                            <strong>${data.player2.email}</strong>
+                            <div class="score">${data.player2.score}</div>
+                            <small>${data.winnerId === data.player2.id ? '🏆 Winner' : ''}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            area.innerHTML = resultHtml + scoreboardHtml;
+
+            const userData = JSON.parse(localStorage.getItem('user'));
+            if (userData.id === 1) {
+                area.innerHTML += `
+                    <div style="margin-top: 20px;">
+                        <a href="admin-winners.html">
+                            <button style="width:100%; padding: 12px; background: #17a2b8; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+                                👑 View All Winners
+                            </button>
+                        </a>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

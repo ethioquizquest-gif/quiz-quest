@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Control</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container { max-width: 900px; margin: 0 auto; }
+        .round-card {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 12px;
+            border-left: 5px solid #4a90e2;
+            transition: all 0.3s;
+        }
+        .round-card.active {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .round-card.completed {
+            border-left-color: #6c757d;
+            background: #e9ecef;
+            opacity: 0.85;
+        }
+        .round-card.final {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .round-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1a1a2e;
+        }
+        .round-stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .stat {
+            background: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .stat strong {
+            color: #4a90e2;
+            font-size: 18px;
+        }
+        .btn-start {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-start:hover:not(:disabled) { background: #218838; }
+        .btn-start:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            transition: width 0.5s;
+        }
+        .winner-list {
+            margin-top: 15px;
+        }
+        .winner-item {
+            background: #d4edda;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .winner-item.gold { background: #ffd700; }
+        .winner-item.silver { background: #c0c0c0; }
+        .winner-item.bronze { background: #cd7f32; color: white; }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .alert-info { background: #d1ecf1; color: #0c5460; }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .status-active { background: #28a745; color: white; }
+        .status-completed { background: #6c757d; color: white; }
+        .status-pending { background: #ffc107; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container admin-container">
+        <h1>🏆 Tournament Control</h1>
+
+        <div id="currentStatus" class="alert alert-info">
+            Loading tournament status...
+        </div>
+
+        <!-- ============ ROUND 1 ============ -->
+        <div id="round1Card" class="round-card">
+            <div class="round-title">🥇 Round 1 (80 → 40) <span id="r1Status" class="status-badge status-pending">Not Started</span></div>
+            <div class="round-stats">
+                <div class="stat">Pairs: <strong id="r1Pairs">0</strong></div>
+                <div class="stat">Completed: <strong id="r1Completed">0</strong></div>
+                <div class="stat">Winners: <strong id="r1Winners">0</strong></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="r1Progress" style="width: 0%"></div>
+            </div>
+            <button class="btn-start" id="r1Btn" onclick="startRound(1)">🚀 Start Round 1</button>
+        </div>
+
+        <!-- ============ ROUND 2 ============ -->
+        <div id="round2Card" class="round-card">
+            <div class="round-title">🥈 Round 2 (40 → 20) <span id="r2Status" class="status-badge status-pending">Not Started</span></div>
+            <div class="round-stats">
+                <div class="stat">Pairs: <strong id="r2Pairs">0</strong></div>
+                <div class="stat">Completed: <strong id="r2Completed">0</strong></div>
+                <div class="stat">Winners: <strong id="r2Winners">0</strong></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="r2Progress" style="width: 0%"></div>
+            </div>
+            <button class="btn-start" id="r2Btn" onclick="startRound(2)" disabled>🚀 Start Round 2</button>
+        </div>
+
+        <!-- ============ ROUND 3 ============ -->
+        <div id="round3Card" class="round-card">
+            <div class="round-title">🥉 Round 3 (20 → 10) <span id="r3Status" class="status-badge status-pending">Not Started</span></div>
+            <div class="round-stats">
+                <div class="stat">Pairs: <strong id="r3Pairs">0</strong></div>
+                <div class="stat">Completed: <strong id="r3Completed">0</strong></div>
+                <div class="stat">Winners: <strong id="r3Winners">0</strong></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="r3Progress" style="width: 0%"></div>
+            </div>
+            <button class="btn-start" id="r3Btn" onclick="startRound(3)" disabled>🚀 Start Round 3</button>
+        </div>
+
+        <!-- ============ ROUND 4 ============ -->
+        <div id="round4Card" class="round-card">
+            <div class="round-title">🏅 Round 4 (10 → 5) <span id="r4Status" class="status-badge status-pending">Not Started</span></div>
+            <div class="round-stats">
+                <div class="stat">Pairs: <strong id="r4Pairs">0</strong></div>
+                <div class="stat">Completed: <strong id="r4Completed">0</strong></div>
+                <div class="stat">Winners: <strong id="r4Winners">0</strong></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="r4Progress" style="width: 0%"></div>
+            </div>
+            <button class="btn-start" id="r4Btn" onclick="startRound(4)" disabled>🚀 Start Round 4</button>
+        </div>
+
+        <!-- ============ FINAL WINNERS ============ -->
+        <div id="finalWinners" class="round-card final" style="display: none;">
+            <div class="round-title">🏆 FINAL 5 WINNERS 🏆</div>
+            <div class="winner-list" id="winnerList"></div>
+        </div>
+
+        <p class="link"><a href="admin-panel.html">← Back to Admin Panel</a></p>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        // ============ LOAD ALL ROUNDS ============
+        async function loadAllRounds() {
+            try {
+                const currentRes = await fetch('http://localhost:3000/api/tournament/current-round', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const current = await currentRes.json();
+
+                document.getElementById('currentStatus').innerHTML = 
+                    `📊 Current Round: <strong>${current.round || 'Not Started'}</strong> | Status: <strong>${current.status || 'N/A'}</strong>`;
+
+                for (let r = 1; r <= 4; r++) {
+                    await loadRoundResults(r);
+                }
+
+                await loadFinalWinners();
+
+            } catch (error) {
+                console.error('Load error:', error);
+                document.getElementById('currentStatus').innerHTML = '❌ Error loading tournament status.';
+                document.getElementById('currentStatus').className = 'alert alert-error';
+            }
+        }
+
+        // ============ LOAD ROUND RESULTS ============
+        async function loadRoundResults(roundNum) {
+            try {
+                const res = await fetch(`http://localhost:3000/api/tournament/round/${roundNum}/results`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                document.getElementById(`r${roundNum}Pairs`).textContent = data.totalPairs;
+                document.getElementById(`r${roundNum}Completed`).textContent = data.completedPairs;
+                document.getElementById(`r${roundNum}Winners`).textContent = data.winners;
+
+                const progressEl = document.getElementById(`r${roundNum}Progress`);
+                const cardEl = document.getElementById(`round${roundNum}Card`);
+                const btnEl = document.getElementById(`r${roundNum}Btn`);
+                const statusEl = document.getElementById(`r${roundNum}Status`);
+
+                if (data.totalPairs > 0) {
+                    const percent = (data.completedPairs / data.totalPairs) * 100;
+                    progressEl.style.width = percent + '%';
+                } else {
+                    progressEl.style.width = '0%';
+                }
+
+                // Update card style
+                cardEl.classList.remove('active', 'completed');
+                if (data.totalPairs === 0) {
+                    statusEl.textContent = 'Not Started';
+                    statusEl.className = 'status-badge status-pending';
+                    if (btnEl) btnEl.disabled = roundNum > 1;
+                } else if (data.isComplete) {
+                    cardEl.classList.add('completed');
+                    statusEl.textContent = '✅ Complete';
+                    statusEl.className = 'status-badge status-completed';
+                    if (btnEl) btnEl.disabled = true;
+
+                    // Enable next round button
+                    if (roundNum < 4) {
+                        const nextBtn = document.getElementById(`r${roundNum + 1}Btn`);
+                        if (nextBtn) nextBtn.disabled = false;
+                    }
+                } else {
+                    cardEl.classList.add('active');
+                    statusEl.textContent = '🔄 In Progress';
+                    statusEl.className = 'status-badge status-active';
+                    if (btnEl) btnEl.disabled = true;
+                }
+
+            } catch (error) {
+                console.error(`Round ${roundNum} error:`, error);
+            }
+        }
+
+        // ============ LOAD FINAL WINNERS ============
+        async function loadFinalWinners() {
+            try {
+                const res = await fetch('http://localhost:3000/api/tournament/final-winners', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.winners && data.winners.length > 0) {
+                    const container = document.getElementById('finalWinners');
+                    const list = document.getElementById('winnerList');
+                    container.style.display = 'block';
+
+                    list.innerHTML = data.winners.map((w, index) => {
+                        let medal = '🏆';
+                        let cls = '';
+                        if (index === 0) { medal = '🥇'; cls = 'gold'; }
+                        else if (index === 1) { medal = '🥈'; cls = 'silver'; }
+                        else if (index === 2) { medal = '🥉'; cls = 'bronze'; }
+
+                        return `
+                            <div class="winner-item ${cls}">
+                                <span>${medal} <strong>#${index + 1}</strong> ${w.email}</span>
+                                <span>🏆 Winner</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Winners error:', error);
+            }
+        }
+
+        // ============ START ROUND ============
+        async function startRound(roundNum) {
+            if (!confirm(`⚠️ Start Round ${roundNum}?\n\nThis will pair all eligible participants for this round.`)) {
+                return;
+            }
+
+            const btn = document.getElementById(`r${roundNum}Btn`);
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Starting...';
+            }
+
+            try {
+                const res = await fetch('http://localhost:3000/api/admin/start-round', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ roundNumber: roundNum })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert(`✅ ${data.message}\n\n${data.totalParticipants} participants → ${data.totalPairs} pairs.`);
+                    loadAllRounds();
+                } else {
+                    alert(`❌ ${data.error}`);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = `🚀 Start Round ${roundNum}`;
+                    }
+                }
+            } catch (error) {
+                alert('❌ Server error: ' + error.message);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = `🚀 Start Round ${roundNum}`;
+                }
+            }
+        }
+
+        // ============ INITIAL LOAD ============
+        loadAllRounds();
+
+        // Refresh every 15 seconds
+        setInterval(loadAllRounds, 15000);
+    </script>
+</body>
+</html>

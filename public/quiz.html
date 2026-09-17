@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quiz Battle</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background: white;
+            padding: 25px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+        }
+        h1 { text-align: center; color: #1a1a2e; margin-bottom: 15px; font-size: 24px; }
+        .progress {
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .timer {
+            font-size: 56px;
+            font-weight: bold;
+            text-align: center;
+            color: #4a90e2;
+            margin: 10px 0;
+            transition: color 0.3s;
+        }
+        .timer.warning { color: #ffc107; }
+        .timer.danger { color: #dc3545; animation: pulse 0.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .question-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+        .question-text {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: left;
+            line-height: 1.6;
+            color: #1a1a2e;
+            word-wrap: break-word;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        .options button {
+            padding: 16px 20px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+            width: 100%;
+            white-space: normal;
+            word-wrap: break-word;
+            line-height: 1.5;
+            min-height: 60px;
+            transition: all 0.2s;
+            font-family: inherit;
+            color: #333;
+        }
+        .options button:hover:not(:disabled) {
+            background: #e9ecef;
+            border-color: #4a90e2;
+            transform: translateY(-2px);
+        }
+        .options button:disabled {
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+        .options button.correct {
+            background: #28a745 !important;
+            color: white !important;
+            border-color: #28a745 !important;
+        }
+        .options button.wrong {
+            background: #dc3545 !important;
+            color: white !important;
+            border-color: #dc3545 !important;
+        }
+        .options button.selected {
+            background: #4a90e2 !important;
+            color: white !important;
+            border-color: #4a90e2 !important;
+        }
+        .feedback {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 15px 0;
+            min-height: 35px;
+        }
+        .feedback.correct-feedback { color: #28a745; }
+        .feedback.wrong-feedback { color: #dc3545; }
+        .feedback.timeout-feedback { color: #ffc107; }
+        .result-box {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .result-box h2 { font-size: 30px; color: #28a745; margin-bottom: 15px; }
+        .result-box p { font-size: 17px; color: #555; margin: 10px 0; }
+        .link { text-align: center; margin-top: 20px; }
+        .link a { color: #4a90e2; text-decoration: none; font-size: 14px; }
+
+        @media (max-width: 600px) {
+            body { padding: 5px; }
+            .quiz-container {
+                padding: 20px 15px;
+                border-radius: 8px;
+                min-height: 95vh;
+            }
+            h1 { font-size: 20px; }
+            .timer { font-size: 48px; }
+            .question-text { font-size: 16px; }
+            .options button {
+                padding: 14px 16px;
+                font-size: 15px;
+                min-height: 55px;
+            }
+            .feedback { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>⚔️ Quiz Battle</h1>
+        <div id="quizArea">
+            <div class="progress" id="progressDisplay">Question 1 / 8</div>
+            <div class="timer" id="timerDisplay">6</div>
+            <div class="question-box">
+                <div class="question-text" id="questionText">Loading question...</div>
+                <div class="options" id="optionsContainer"></div>
+            </div>
+            <div class="feedback" id="feedbackDisplay"></div>
+        </div>
+        <div id="resultArea" style="display: none;">
+            <div class="result-box">
+                <h2>🎉 Quiz Complete!</h2>
+                <p>You've finished all 8 questions!</p>
+                <p id="scoreDisplay" style="font-size: 20px; font-weight: bold; color: #4a90e2;"></p>
+                <p style="font-size: 14px; color: #888;">Redirecting to results...</p>
+            </div>
+        </div>
+        <p class="link"><a href="dashboard.html">← Exit Quiz</a></p>
+    </div>
+
+    <script>
+        // ============ ANTI-CHEAT PROTECTION ============
+        let tabSwitchCount = 0;
+        let isDisqualified = false;
+
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('copy', (e) => e.preventDefault());
+        document.addEventListener('cut', (e) => e.preventDefault());
+        document.addEventListener('paste', (e) => e.preventDefault());
+        document.addEventListener('selectstart', (e) => e.preventDefault());
+
+        document.addEventListener('keydown', (e) => {
+            if (
+                (e.ctrlKey && ['c', 'v', 'x', 'a', 'u', 's', 'p'].includes(e.key.toLowerCase())) ||
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase())) ||
+                (e.ctrlKey && e.key.toLowerCase() === 'p')
+            ) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && !isDisqualified) {
+                tabSwitchCount++;
+
+                if (tabSwitchCount === 1) {
+                    alert('⚠️ WARNING!\n\nDo not switch tabs or leave this page.\nIf you do it again, you will be DISQUALIFIED.');
+                } else if (tabSwitchCount >= 2) {
+                    isDisqualified = true;
+                    disqualifyUser();
+                }
+            }
+        });
+
+        window.addEventListener('beforeunload', (e) => {
+            if (currentQuestion < questions.length && !isAnswered && !isDisqualified) {
+                e.preventDefault();
+                e.returnValue = 'Are you sure you want to leave? Your progress will be lost.';
+            }
+        });
+
+        // ============ LOGIN CHECK ============
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        // ============ QUIZ STATE ============
+        let currentQuestion = 0;
+        let timer = 6;
+        let timerInterval;
+        let isAnswered = false;
+        let questions = [];
+        let score = 0;
+        let pairId = new URLSearchParams(window.location.search).get('pairId');
+        let round = new URLSearchParams(window.location.search).get('round') || '1';
+
+        // ============ DISQUALIFY USER ============
+        async function disqualifyUser() {
+            clearInterval(timerInterval);
+
+            alert('❌ DISQUALIFIED!\n\nYou switched tabs twice. Your quiz has been terminated.');
+
+            try {
+                await fetch('http://localhost:3000/api/disqualify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ pairId: pairId })
+                });
+            } catch (error) {
+                console.error('Disqualify error:', error);
+            }
+
+            setTimeout(() => {
+                window.location.href = `disqualified.html?pairId=${pairId}`;
+            }, 1500);
+        }
+
+        // ============ LOAD QUESTIONS ============
+        async function loadQuestions() {
+            try {
+                const res = await fetch(`http://localhost:3000/api/questions?round=${round}&pairId=${pairId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error('Failed to load questions');
+
+                questions = await res.json();
+
+                if (!questions || questions.length === 0) {
+                    throw new Error('No questions received');
+                }
+
+                showQuestion();
+            } catch (error) {
+                document.getElementById('questionText').textContent = '⚠️ Error loading questions. Please refresh.';
+                console.error('Question load error:', error);
+            }
+        }
+
+        // ============ SHOW QUESTION ============
+        function showQuestion() {
+            if (currentQuestion >= questions.length) {
+                showResults();
+                return;
+            }
+
+            isAnswered = false;
+            const q = questions[currentQuestion];
+
+            document.getElementById('progressDisplay').textContent = `Question ${currentQuestion + 1} / ${questions.length}`;
+            document.getElementById('questionText').textContent = q.question;
+
+            document.getElementById('feedbackDisplay').textContent = '';
+            document.getElementById('feedbackDisplay').className = 'feedback';
+
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            const letters = ['A', 'B', 'C', 'D'];
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.textContent = `${letters[index]}. ${opt}`;
+                btn.dataset.index = index;
+                btn.addEventListener('click', () => selectOption(index));
+                container.appendChild(btn);
+            });
+
+            startTimer();
+        }
+
+        // ============ TIMER ============
+        function startTimer() {
+            timer = 6;
+            const timerDisplay = document.getElementById('timerDisplay');
+            timerDisplay.textContent = timer;
+            timerDisplay.className = 'timer';
+
+            clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                timer--;
+                timerDisplay.textContent = timer;
+
+                if (timer <= 2) {
+                    timerDisplay.className = 'timer danger';
+                } else if (timer <= 4) {
+                    timerDisplay.className = 'timer warning';
+                }
+
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        // ============ SELECT OPTION ============
+        async function selectOption(index) {
+            if (isAnswered || isDisqualified) return;
+            isAnswered = true;
+            clearInterval(timerInterval);
+
+            const buttons = document.querySelectorAll('.options button');
+            buttons.forEach(btn => btn.disabled = true);
+
+            const q = questions[currentQuestion];
+            const isCorrect = q.correctAnswer === index;
+
+            buttons.forEach((btn, i) => {
+                if (i === q.correctAnswer) btn.classList.add('correct');
+                if (i === index && !isCorrect) btn.classList.add('wrong');
+                if (i === index && isCorrect) btn.classList.add('correct');
+            });
+
+            const feedback = document.getElementById('feedbackDisplay');
+            if (isCorrect) {
+                feedback.textContent = '✅ Correct! 🎉';
+                feedback.className = 'feedback correct-feedback';
+                score++;
+            } else {
+                feedback.textContent = `❌ Wrong! The correct answer was ${['A','B','C','D'][q.correctAnswer]}`;
+                feedback.className = 'feedback wrong-feedback';
+            }
+
+            await submitAnswer(index);
+
+            setTimeout(() => {
+                currentQuestion++;
+                showQuestion();
+            }, 1500);
+        }
+
+        // ============ TIMEOUT ============
+        function handleTimeout() {
+            if (isAnswered || isDisqualified) return;
+            isAnswered = true;
+
+            const buttons = document.querySelectorAll('.options button');
+            buttons.forEach(btn => btn.disabled = true);
+
+            const q = questions[currentQuestion];
+
+            buttons.forEach((btn, i) => {
+                if (i === q.correctAnswer) btn.classList.add('correct');
+            });
+
+            const feedback = document.getElementById('feedbackDisplay');
+            feedback.textContent = `⏰ Time's up! The correct answer was ${['A','B','C','D'][q.correctAnswer]}`;
+            feedback.className = 'feedback timeout-feedback';
+
+            submitAnswer(-1);
+
+            setTimeout(() => {
+                currentQuestion++;
+                showQuestion();
+            }, 1500);
+        }
+
+        // ============ SUBMIT ANSWER ============
+        async function submitAnswer(selected) {
+            try {
+                const response = await fetch(`http://localhost:3000/api/submit-answer?round=${round}&pairId=${pairId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        pairId: pairId,
+                        questionIndex: currentQuestion,
+                        selectedOption: selected
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) console.error('Submit error:', data.error);
+                return data;
+            } catch (error) {
+                console.error('Submit error:', error);
+            }
+        }
+
+        // ============ SHOW RESULTS ============
+        function showResults() {
+            document.getElementById('quizArea').style.display = 'none';
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('scoreDisplay').textContent = `You got ${score} out of ${questions.length} correct!`;
+
+            setTimeout(() => {
+                window.location.href = `quiz-results.html?pairId=${pairId}`;
+            }, 3000);
+        }
+
+        // ============ INITIALIZE ============
+        async function initQuiz() {
+            if (!pairId) {
+                try {
+                    const res = await fetch('http://localhost:3000/api/my-pair', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+
+                    if (data.pairId) {
+                        pairId = data.pairId;
+                    } else {
+                        document.getElementById('questionText').textContent = '⚠️ You are not paired yet. Go back to the lobby.';
+                        document.getElementById('optionsContainer').innerHTML = '';
+                        return;
+                    }
+                } catch (error) {
+                    document.getElementById('questionText').textContent = '⚠️ Error checking pair status.';
+                    return;
+                }
+            }
+
+            // ✅ CHECK IF ALREADY COMPLETED
+            try {
+                const checkRes = await fetch(`http://localhost:3000/api/quiz-completed/${pairId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const checkData = await checkRes.json();
+
+                if (checkData.completed) {
+                    document.getElementById('questionText').textContent = '✅ You already completed this quiz!';
+                    document.getElementById('optionsContainer').innerHTML = '';
+                    document.getElementById('timerDisplay').textContent = '✓';
+                    
+                    setTimeout(() => {
+                        window.location.href = `quiz-results.html?pairId=${pairId}`;
+                    }, 2000);
+                    return;
+                }
+
+                loadQuestions();
+
+            } catch (error) {
+                console.error('Check error:', error);
+                loadQuestions();
+            }
+        }
+
+        initQuiz();
+    </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .btn-primary {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .btn-primary:hover { background: #357abd; transform: translateY(-2px); }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-secondary { background: #6c757d; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-info { background: #17a2b8; }
+        .btn-info:hover { background: #138496; }
+        .btn-prize {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #333;
+            font-weight: bold;
+        }
+        .btn-prize:hover { background: linear-gradient(135deg, #ffed4e, #ffd700); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 Welcome to Quiz Quest!</h1>
+
+        <div id="userInfo" style="text-align: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <p>Logged in as: <strong id="userEmail">Loading...</strong></p>
+            <p style="font-size: 13px; color: #888;">(ID: <span id="userId">?</span>)</p>
+        </div>
+
+        <a href="upload-screenshot.html">
+            <button class="btn-primary">📸 Submit Screenshot</button>
+        </a>
+
+        <a href="join-quest.html">
+            <button class="btn-primary btn-success">⚔️ Join Quest</button>
+        </a>
+
+        <a href="quest-status.html">
+            <button class="btn-primary btn-warning">📊 Quest Status</button>
+        </a>
+
+        <a href="quiz-lobby.html">
+            <button class="btn-primary btn-info">📊 Quiz Lobby</button>
+        </a>
+
+        <a href="prizes.html">
+            <button class="btn-primary btn-prize">🏆 View Prizes</button>
+        </a>
+
+        <a href="admin-quest.html">
+            <button class="btn-primary btn-secondary">👑 Admin Quest</button>
+        </a>
+
+        <a href="admin-panel.html">
+            <button class="btn-primary btn-secondary" style="background: #17a2b8;">🛠️ Admin Panel</button>
+        </a>
+
+        <a href="admin-tournament.html">
+            <button class="btn-primary btn-secondary" style="background: #fd7e14;">🏆 Tournament Control</button>
+        </a>
+
+        <a href="admin-winners.html">
+            <button class="btn-primary" style="background: #6f42c1;">👑 All Winners</button>
+        </a>
+
+        <button onclick="logout()" class="btn-primary btn-danger">🚪 Logout</button>
+
+        <p style="text-align: center; margin-top: 20px; color: #888; font-size: 14px;">
+            ⚡ Only approved users can join the quest. Max 80 participants.
+        </p>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!token || !user) {
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('userEmail').textContent = user.email || 'Unknown';
+            document.getElementById('userId').textContent = user.id || '?';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

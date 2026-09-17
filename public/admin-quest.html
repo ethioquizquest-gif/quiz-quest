@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Quest Participants</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .user-card {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .badge {
+            background: #4a90e2;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .admin-container { max-width: 800px; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <div class="container admin-container">
+        <h1>🛠️ Quest Participants</h1>
+        <p><strong>Total Joined:</strong> <span id="totalCount">Loading...</span> / 80</p>
+        <div id="participantList">Loading...</div>
+        <p class="link"><a href="dashboard.html">← Back to Dashboard</a></p>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        async function loadParticipants() {
+            try {
+                const res = await fetch('http://localhost:3000/api/admin/participants', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.status === 403) {
+                    document.getElementById('participantList').innerHTML = '❌ Admin access only.';
+                    return;
+                }
+
+                const data = await res.json();
+                document.getElementById('totalCount').textContent = data.length;
+
+                const list = document.getElementById('participantList');
+
+                if (data.length === 0) {
+                    list.innerHTML = 'No users have joined the quest yet.';
+                    return;
+                }
+
+                list.innerHTML = data.map((user, index) => `
+                    <div class="user-card">
+                        <span><strong>#${index + 1}</strong> ${user.email} ${user.full_name ? '— ' + user.full_name : ''}</span>
+                        <span class="badge">Joined: ${new Date(user.joined_at).toLocaleDateString()}</span>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('participantList').innerHTML = 'Error loading participants.';
+            }
+        }
+
+        loadParticipants();
+    </script>
+</body>
+</html>
