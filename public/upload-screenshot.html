@@ -30,7 +30,7 @@
         }
         async function checkStatus() {
             try {
-                const res = await fetch('http://localhost:3000/api/screenshot-status', {
+                const res = await fetch('/api/screenshot-status', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -67,7 +67,7 @@
             const formData = new FormData();
             formData.append('screenshot', file);
             try {
-                const res = await fetch('http://localhost:3000/api/upload-screenshot', {
+                const res = await fetch('/api/upload-screenshot', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData

@@ -243,7 +243,7 @@
             alert('❌ DISQUALIFIED!\n\nYou switched tabs twice. Your quiz has been terminated.');
 
             try {
-                await fetch('http://localhost:3000/api/disqualify', {
+                await fetch('/api/disqualify', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -263,7 +263,7 @@
         // ============ LOAD QUESTIONS ============
         async function loadQuestions() {
             try {
-                const res = await fetch(`http://localhost:3000/api/questions?round=${round}&pairId=${pairId}`, {
+                const res = await fetch(`/api/questions?round=${round}&pairId=${pairId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -404,7 +404,7 @@
         // ============ SUBMIT ANSWER ============
         async function submitAnswer(selected) {
             try {
-                const response = await fetch(`http://localhost:3000/api/submit-answer?round=${round}&pairId=${pairId}`, {
+                const response = await fetch(`/api/submit-answer?round=${round}&pairId=${pairId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -439,7 +439,7 @@
         async function initQuiz() {
             if (!pairId) {
                 try {
-                    const res = await fetch('http://localhost:3000/api/my-pair', {
+                    const res = await fetch('/api/my-pair', {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     const data = await res.json();
@@ -459,7 +459,7 @@
 
             // ✅ CHECK IF ALREADY COMPLETED
             try {
-                const checkRes = await fetch(`http://localhost:3000/api/quiz-completed/${pairId}`, {
+                const checkRes = await fetch(`/api/quiz-completed/${pairId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const checkData = await checkRes.json();

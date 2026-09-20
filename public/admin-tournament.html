@@ -197,7 +197,7 @@
         // ============ LOAD ALL ROUNDS ============
         async function loadAllRounds() {
             try {
-                const currentRes = await fetch('http://localhost:3000/api/tournament/current-round', {
+                const currentRes = await fetch('/api/tournament/current-round', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const current = await currentRes.json();
@@ -221,7 +221,7 @@
         // ============ LOAD ROUND RESULTS ============
         async function loadRoundResults(roundNum) {
             try {
-                const res = await fetch(`http://localhost:3000/api/tournament/round/${roundNum}/results`, {
+                const res = await fetch(`/api/tournament/round/${roundNum}/results`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -274,7 +274,7 @@
         // ============ LOAD FINAL WINNERS ============
         async function loadFinalWinners() {
             try {
-                const res = await fetch('http://localhost:3000/api/tournament/final-winners', {
+                const res = await fetch('/api/tournament/final-winners', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -317,7 +317,7 @@
             }
 
             try {
-                const res = await fetch('http://localhost:3000/api/admin/start-round', {
+                const res = await fetch('/api/admin/start-round', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

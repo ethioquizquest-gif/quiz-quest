@@ -104,7 +104,7 @@
 
         async function loadPending() {
             try {
-                const res = await fetch('http://localhost:3000/api/admin/pending', {
+                const res = await fetch('/api/admin/pending', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.status === 403) { document.getElementById('pendingList').innerHTML = '❌ Admin access only.'; return; }
@@ -125,7 +125,7 @@
 
         async function approve(id, action) {
             try {
-                const res = await fetch('http://localhost:3000/api/admin/approve', {
+                const res = await fetch('/api/admin/approve', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ screenshotId: id, action })
@@ -138,7 +138,7 @@
 
         async function loadParticipants() {
             try {
-                const res = await fetch('http://localhost:3000/api/admin/participants', {
+                const res = await fetch('/api/admin/participants', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.status === 403) { document.getElementById('participantList').innerHTML = '❌ Admin only.'; return; }
@@ -156,7 +156,7 @@
 
         async function loadPairs() {
             try {
-                const res = await fetch('http://localhost:3000/api/admin/pairs', {
+                const res = await fetch('/api/admin/pairs', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.status === 403) { document.getElementById('pairsList').innerHTML = '❌ Admin only.'; return; }
@@ -178,15 +178,15 @@
 
         async function loadStats() {
             try {
-                const pRes = await fetch('http://localhost:3000/api/admin/participants', { headers: { 'Authorization': `Bearer ${token}` } });
+                const pRes = await fetch('/api/admin/participants', { headers: { 'Authorization': `Bearer ${token}` } });
                 const pData = await pRes.json();
                 document.getElementById('totalParticipants').textContent = Array.isArray(pData) ? pData.length : 0;
 
-                const sRes = await fetch('http://localhost:3000/api/admin/pending', { headers: { 'Authorization': `Bearer ${token}` } });
+                const sRes = await fetch('/api/admin/pending', { headers: { 'Authorization': `Bearer ${token}` } });
                 const sData = await sRes.json();
                 document.getElementById('pendingCount').textContent = Array.isArray(sData) ? sData.length : 0;
 
-                const pairRes = await fetch('http://localhost:3000/api/admin/pairs', { headers: { 'Authorization': `Bearer ${token}` } });
+                const pairRes = await fetch('/api/admin/pairs', { headers: { 'Authorization': `Bearer ${token}` } });
                 const pairData = await pairRes.json();
                 document.getElementById('pairedCount').textContent = Array.isArray(pairData) ? pairData.length : 0;
 
@@ -207,7 +207,7 @@
             msg.style.display = 'block';
 
             try {
-                const res = await fetch('http://localhost:3000/api/pair-users', {
+                const res = await fetch('/api/pair-users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
                 });
@@ -237,7 +237,7 @@
             msg.innerHTML = '⏳ Resetting...';
 
             try {
-                const res = await fetch('http://localhost:3000/api/admin/reset-pairs', {
+                const res = await fetch('/api/admin/reset-pairs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
                 });
@@ -263,7 +263,7 @@
             msg.innerHTML = '⏳ Checking all active pairs...';
 
             try {
-                const res = await fetch('http://localhost:3000/api/admin/check-timeouts', {
+                const res = await fetch('/api/admin/check-timeouts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
                 });

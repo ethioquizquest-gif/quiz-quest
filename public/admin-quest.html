@@ -41,7 +41,7 @@
 
         async function loadParticipants() {
             try {
-                const res = await fetch('http://localhost:3000/api/admin/participants', {
+                const res = await fetch('/api/admin/participants', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 

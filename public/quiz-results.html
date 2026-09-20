@@ -73,7 +73,7 @@
         // ============ CHECK IF COMPLETED FIRST ============
         async function checkCompletionThenLoad() {
             try {
-                const res = await fetch(`http://localhost:3000/api/quiz-completed/${pairId}`, {
+                const res = await fetch(`/api/quiz-completed/${pairId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -94,7 +94,7 @@
         // ============ LOAD RESULTS ============
         async function loadResults(pairId) {
             try {
-                const res = await fetch(`http://localhost:3000/api/quiz-results/${pairId}`, {
+                const res = await fetch(`/api/quiz-results/${pairId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 

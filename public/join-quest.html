@@ -38,13 +38,13 @@
         async function loadStatus() {
             try {
                 // Get quest status
-                const questRes = await fetch('http://localhost:3000/api/quest-status', {
+                const questRes = await fetch('/api/quest-status', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const questData = await questRes.json();
 
                 // Get screenshot status
-                const screenshotRes = await fetch('http://localhost:3000/api/screenshot-status', {
+                const screenshotRes = await fetch('/api/screenshot-status', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const screenshotData = await screenshotRes.json();
@@ -180,7 +180,7 @@
             }
 
             try {
-                const res = await fetch('http://localhost:3000/api/join-quest', {
+                const res = await fetch('/api/join-quest', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

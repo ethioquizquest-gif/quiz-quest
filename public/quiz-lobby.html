@@ -27,7 +27,7 @@
         async function checkStatus() {
             try {
                 // 1. Check if user joined quest
-                const questRes = await fetch('http://localhost:3000/api/quest-status', {
+                const questRes = await fetch('/api/quest-status', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const questData = await questRes.json();
@@ -49,7 +49,7 @@
                 }
 
                 // 2. Check if user has an active pair
-                const pairRes = await fetch('http://localhost:3000/api/my-pair', {
+                const pairRes = await fetch('/api/my-pair', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const pairData = await pairRes.json();
@@ -71,7 +71,7 @@
                 }
 
                 // 3. No active pair — check if eliminated
-                const eliminatedRes = await fetch('http://localhost:3000/api/am-i-eliminated', {
+                const eliminatedRes = await fetch('/api/am-i-eliminated', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const eliminatedData = await eliminatedRes.json();
