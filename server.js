@@ -377,7 +377,6 @@ app.get('/api/am-i-eliminated', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // Check if user has any resolved pair where they LOST
         const lostPair = await get(`
             SELECT id, round, winner_id 
             FROM quiz_pairs 
@@ -391,7 +390,6 @@ app.get('/api/am-i-eliminated', authMiddleware, async (req, res) => {
             return res.json({ eliminated: false });
         }
 
-        // Check if they're still in a future round
         const stillActive = await get(`
             SELECT id FROM quiz_pairs 
             WHERE (player1_id = ? OR player2_id = ?) 
@@ -403,7 +401,6 @@ app.get('/api/am-i-eliminated', authMiddleware, async (req, res) => {
             return res.json({ eliminated: false });
         }
 
-        // Check if they won Round 4 (final winner)
         const finalWin = await get(`
             SELECT id FROM quiz_pairs 
             WHERE winner_id = ? AND round = 4
@@ -934,6 +931,125 @@ app.get('/api/tournament/final-winners', authMiddleware, async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// ============ ADMIN: KICK USER (DELETE) ============
+app.delete('/api/admin/kick-user/:userId', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.id !== 1) {
+            return res.status(403).json({ error: 'Admin only' });
+        }
+
+        const userId = parseInt(req.params.userId);
+
+        if (userId === 1) {
+            return res.status(400).json({ error: 'Cannot kick the admin account' });
+        }
+
+        await run('DELETE FROM quiz_answers WHERE user_id = ?', [userId]);
+        await run('DELETE FROM quiz_pairs WHERE player1_id = ? OR player2_id = ?', [userId, userId]);
+        await run('DELETE FROM quest_participants WHERE user_id = ?', [userId]);
+        await run('DELETE FROM screenshots WHERE user_id = ?', [userId]);
+        await run('DELETE FROM users WHERE id = ?', [userId]);
+
+        console.log(`🗑️ Kicked user ID: ${userId}`);
+        res.json({ message: `✅ User ${userId} kicked successfully!` });
+    } catch (error) {
+        console.error('Kick user error:', error.message);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+});
+
+// ============ ADMIN: GET ALL USERS (FOR KICK PANEL) ============
+app.get('/api/admin/all-users', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.id !== 1) {
+            return res.status(403).json({ error: 'Admin only' });
+        }
+
+        const users = await query(`
+            SELECT 
+                u.id,
+                u.email,
+                u.created_at,
+                u.last_login,
+                (SELECT COUNT(*) FROM quest_participants WHERE user_id = u.id) as joined_quest,
+                (SELECT COUNT(*) FROM screenshots WHERE user_id = u.id) as has_screenshot
+            FROM users u
+            ORDER BY u.created_at ASC
+        `);
+
+        res.json(users);
+    } catch (error) {
+        console.error('All users error:', error.message);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+});
+
+// ============ ADMIN: KICK DEMO USERS (BULK) ============
+app.post('/api/admin/kick-demos', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.id !== 1) {
+            return res.status(403).json({ error: 'Admin only' });
+        }
+
+        const { pattern } = req.body;
+        const searchPattern = pattern || '%test%';
+
+        const demoUsers = await query(`
+            SELECT id, email FROM users 
+            WHERE email LIKE ? AND id != 1
+        `, [searchPattern]);
+
+        if (demoUsers.length === 0) {
+            return res.json({ message: 'No demo users found.', kicked: 0 });
+        }
+
+        for (const user of demoUsers) {
+            await run('DELETE FROM quiz_answers WHERE user_id = ?', [user.id]);
+            await run('DELETE FROM quiz_pairs WHERE player1_id = ? OR player2_id = ?', [user.id, user.id]);
+            await run('DELETE FROM quest_participants WHERE user_id = ?', [user.id]);
+            await run('DELETE FROM screenshots WHERE user_id = ?', [user.id]);
+            await run('DELETE FROM users WHERE id = ?', [user.id]);
+        }
+
+        console.log(`🗑️ Kicked ${demoUsers.length} demo users`);
+        res.json({ 
+            message: `✅ Kicked ${demoUsers.length} demo users!`,
+            kicked: demoUsers.length,
+            users: demoUsers.map(u => u.email)
+        });
+    } catch (error) {
+        console.error('Kick demos error:', error.message);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+});
+
+// ============ ADMIN: RESET EVERYTHING (NUCLEAR) ============
+app.post('/api/admin/reset-everything', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.id !== 1) {
+            return res.status(403).json({ error: 'Admin only' });
+        }
+
+        const { confirm } = req.body;
+        if (confirm !== 'RESET') {
+            return res.status(400).json({ error: 'Type RESET to confirm' });
+        }
+
+        await run('DELETE FROM quiz_answers');
+        await run('DELETE FROM quiz_pairs');
+        await run('DELETE FROM quest_participants');
+        await run('DELETE FROM screenshots');
+        await run('DELETE FROM tournament_rounds');
+        await run('DELETE FROM users WHERE id != 1');
+
+        console.log('🚨 FULL RESET - all data cleared except admin');
+        res.json({ message: '✅ Everything reset! Only admin remains.' });
+    } catch (error) {
+        console.error('Reset error:', error.message);
+        res.status(500).json({ error: 'Server error: ' + error.message });
     }
 });
 
