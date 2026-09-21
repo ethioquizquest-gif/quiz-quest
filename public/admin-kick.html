@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kick Users - Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container { max-width: 900px; margin: 0 auto; }
+        .user-row {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .user-info { flex: 1; min-width: 200px; }
+        .user-email { font-weight: bold; color: #1a1a2e; }
+        .user-meta { font-size: 12px; color: #888; margin-top: 3px; }
+        .btn-kick {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .btn-kick:hover { background: #c82333; }
+        .btn-kick:disabled { background: #6c757d; cursor: not-allowed; }
+        .admin-badge {
+            background: #ffc107;
+            color: #333;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .section-title {
+            margin-top: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+        .action-box {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ffc107;
+            margin: 15px 0;
+        }
+        .action-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+        .btn-danger:hover { background: #c82333; }
+        .input-pattern {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            width: 250px;
+            margin-right: 10px;
+        }
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        .message.success { background: #d4edda; color: #155724; display: block; }
+        .message.error { background: #f8d7da; color: #721c24; display: block; }
+        .message.info { background: #d1ecf1; color: #0c5460; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container admin-container">
+        <h1>🦵 Kick Users</h1>
+        <p style="color: #666;">Remove demo accounts or unwanted users from your tournament.</p>
+
+        <div id="message" class="message"></div>
+
+        <!-- ============ BULK KICK DEMOS ============ -->
+        <div class="action-box">
+            <h3>🗑️ Bulk Kick Demo Users</h3>
+            <p style="color: #856404; font-size: 14px;">Delete all users matching a pattern (e.g., <code>%test%</code> or <code>%demo%</code>).</p>
+            <input type="text" id="patternInput" class="input-pattern" placeholder="%test%" value="%test%">
+            <button class="btn-warning" onclick="kickDemos()">🗑️ Kick Demo Users</button>
+        </div>
+
+        <!-- ============ RESET EVERYTHING ============ -->
+        <div class="action-box" style="background: #f8d7da; border-color: #dc3545;">
+            <h3 style="color: #721c24;">🚨 Reset Everything (Nuclear)</h3>
+            <p style="color: #721c24; font-size: 14px;">Delete ALL users, pairs, answers, and screenshots. Only admin remains.</p>
+            <input type="text" id="resetConfirm" class="input-pattern" placeholder="Type RESET to confirm">
+            <button class="btn-danger" onclick="resetEverything()">🚨 Reset Everything</button>
+        </div>
+
+        <!-- ============ ALL USERS LIST ============ -->
+        <h3 class="section-title">👥 All Users</h3>
+        <div id="usersList">Loading...</div>
+
+        <p class="link"><a href="admin-panel.html">← Back to Admin Panel</a></p>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + type;
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 5000);
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/admin/all-users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.status === 403) {
+                    document.getElementById('usersList').innerHTML = '❌ Admin only.';
+                    return;
+                }
+
+                const users = await res.json();
+                const list = document.getElementById('usersList');
+
+                if (!Array.isArray(users) || users.length === 0) {
+                    list.innerHTML = 'No users found.';
+                    return;
+                }
+
+                list.innerHTML = users.map(user => `
+                    <div class="user-row">
+                        <div class="user-info">
+                            <div class="user-email">
+                                ${user.email}
+                                ${user.id === 1 ? '<span class="admin-badge">ADMIN</span>' : ''}
+                            </div>
+                            <div class="user-meta">
+                                ID: ${user.id} · 
+                                Registered: ${new Date(user.created_at).toLocaleDateString()} · 
+                                ${user.joined_quest ? '✅ Joined Quest' : '⏳ Not Joined'} · 
+                                ${user.has_screenshot ? '📸 Has Screenshot' : '❌ No Screenshot'}
+                            </div>
+                        </div>
+                        ${user.id === 1 
+                            ? '<button class="btn-kick" disabled>Cannot Kick</button>' 
+                            : `<button class="btn-kick" onclick="kickUser(${user.id}, '${user.email}')">🦵 Kick</button>`
+                        }
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                document.getElementById('usersList').innerHTML = '❌ Error loading users.';
+                console.error(error);
+            }
+        }
+
+        async function kickUser(userId, email) {
+            if (!confirm(`⚠️ Kick user?\n\n${email}\n\nThis will DELETE their account and all their data.`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/admin/kick-user/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage('✅ ' + data.message, 'success');
+                    loadUsers();
+                } else {
+                    showMessage('❌ ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Server error: ' + error.message, 'error');
+            }
+        }
+
+        async function kickDemos() {
+            const pattern = document.getElementById('patternInput').value || '%test%';
+
+            if (!confirm(`⚠️ Kick ALL users matching "${pattern}"?\n\nThis cannot be undone.`)) {
+                return;
+            }
+
+            showMessage('⏳ Kicking demo users...', 'info');
+
+            try {
+                const res = await fetch('/api/admin/kick-demos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ pattern })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage('✅ ' + data.message, 'success');
+                    if (data.users && data.users.length > 0) {
+                        console.log('Kicked:', data.users);
+                    }
+                    loadUsers();
+                } else {
+                    showMessage('❌ ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Server error: ' + error.message, 'error');
+            }
+        }
+
+        async function resetEverything() {
+            const confirmText = document.getElementById('resetConfirm').value;
+
+            if (confirmText !== 'RESET') {
+                showMessage('❌ Type RESET exactly to confirm', 'error');
+                return;
+            }
+
+            if (!confirm('🚨 FINAL WARNING!\n\nThis will DELETE ALL DATA except admin.\n\nAre you ABSOLUTELY SURE?')) {
+                return;
+            }
+
+            showMessage('⏳ Resetting everything...', 'info');
+
+            try {
+                const res = await fetch('/api/admin/reset-everything', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ confirm: 'RESET' })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage('✅ ' + data.message, 'success');
+                    document.getElementById('resetConfirm').value = '';
+                    loadUsers();
+                } else {
+                    showMessage('❌ ' + data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Server error: ' + error.message, 'error');
+            }
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>
